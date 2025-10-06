@@ -12,15 +12,15 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex justify-center items-center transition-opacity duration-300">
-      <div className="bg-secondary rounded-lg shadow-xl p-8 w-full max-w-md relative transform transition-all scale-95">
-        <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-text-primary">{title}</h2>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex justify-center items-center transition-opacity duration-300 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-lg relative transform transition-all scale-95 border border-gray-200/50 max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800">{title}</h2>
             <button
             onClick={onClose}
-            className="text-text-secondary hover:text-text-primary transition-colors"
+            className="text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded-full"
             >
-            <XMarkIcon className="h-6 w-6" />
+            <XMarkIcon className="h-5 w-5 sm:h-6 sm:w-6" />
             </button>
         </div>
         {children}

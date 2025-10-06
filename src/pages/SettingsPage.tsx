@@ -102,19 +102,7 @@ const SettingsPage = () => {
                                 <option value="INR">INR - Indian Rupee</option>
                             </select>
                         </div>
-                        
-                        <div>
-                            <h3 className="text-lg font-semibold text-text-primary mb-2">Theme</h3>
-                            <div className="flex items-center space-x-4 bg-accent p-2 rounded-full">
-                                <button onClick={() => setTheme('light')} className={`flex-1 flex items-center justify-center py-2 rounded-full transition-colors ${theme === 'light' ? 'bg-highlight text-white' : 'text-text-secondary'}`}>
-                                    <SunIcon className="h-5 w-5 mr-2" /> Light
-                                </button>
-                                <button onClick={() => setTheme('dark')} className={`flex-1 flex items-center justify-center py-2 rounded-full transition-colors ${theme === 'dark' ? 'bg-highlight text-white' : 'text-text-secondary'}`}>
-                                    <MoonIcon className="h-5 w-5 mr-2" /> Dark
-                                </button>
-                            </div>
-                            <p className="text-xs text-text-secondary mt-2">Note: Theme switching requires a `tailwind.config.js` update to enable class-based dark mode.</p>
-                        </div>
+                    
                     </div>
                 </div>
             </div>

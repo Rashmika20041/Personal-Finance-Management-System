@@ -1,4 +1,3 @@
-import React from 'react';
 import { mockExpenses, mockBudgets, savingsTrendData } from '../data/mockData';
 import { 
     BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, 
@@ -92,8 +91,8 @@ const ReportsPage = () => {
                     <h2 className="text-xl font-bold text-text-primary mb-4">Category-wise Expense Distribution</h2>
                     <ResponsiveContainer width="100%" height={300}>
                         <PieChart>
-                            <Pie data={categoryData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={110} fill="#8884d8" labelLine={false} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
-                                {categoryData.map((entry, index) => (
+                            <Pie data={categoryData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={110} fill="#8884d8" labelLine={false} label={({ name, percent }) => `${name} ${(percent as number * 100).toFixed(0)}%`}>
+                                {categoryData.map((_, index) => (
                                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                 ))}
                             </Pie>

@@ -22,9 +22,9 @@ const navigation = [
 
 const Sidebar = () => {
   return (
-    <div className="w-64 bg-secondary p-5 flex flex-col">
+    <div className="w-64 bg-gray-800 p-5 flex flex-col min-h-screen">
       <div className="flex items-center mb-10">
-        <img src={logo} alt="Logo" className="h-15 w-25 ml-3" />
+        <img src={logo} alt="Logo" className="h-18 w-29 ml-6" />
       </div>
       <nav className="flex-1">
         <ul>
@@ -33,8 +33,8 @@ const Sidebar = () => {
               <NavLink
                 to={item.href}
                 className={({ isActive }) =>
-                  `flex items-center px-4 py-2 my-1 rounded-md text-text-secondary hover:bg-accent hover:text-text-primary transition-colors ${
-                    isActive ? 'bg-highlight text-white' : ''
+                  `flex items-center px-4 py-3 my-1 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors duration-200 ${
+                    isActive ? 'bg-blue-600 text-white shadow-lg' : ''
                   }`
                 }
               >

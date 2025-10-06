@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ArrowPathIcon, CheckCircleIcon, ExclamationTriangleIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 
 type SyncStatus = 'idle' | 'syncing' | 'success' | 'conflict' | 'error';
@@ -85,7 +85,7 @@ const SynchronizationPage = () => {
                     <button 
                         onClick={handleSync}
                         disabled={syncStatus === 'syncing'}
-                        className="flex items-center justify-center bg-highlight text-white px-8 py-3 rounded-lg hover:bg-teal-500 transition-colors disabled:bg-accent disabled:cursor-not-allowed w-64 h-14"
+                        className="flex items-center justify-center bg-teal-500 text-white px-8 py-3 rounded-lg hover:bg-teal-600 transition-colors disabled:bg-accent disabled:cursor-not-allowed w-64 h-14"
                     >
                         {syncStatus !== 'syncing' && <ArrowPathIcon className="h-6 w-6 mr-3" />}
                         {syncStatus === 'syncing' ? 'Please wait...' : 'Sync Now'}

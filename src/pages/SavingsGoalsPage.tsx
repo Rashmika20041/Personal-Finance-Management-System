@@ -82,7 +82,7 @@ const SavingsGoalsPage = () => {
         <div>
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-text-primary">Savings Goals</h1>
-                <button onClick={() => handleOpenModal()} className="flex items-center bg-highlight text-white px-4 py-2 rounded-md hover:bg-teal-500 transition-colors">
+                <button onClick={() => handleOpenModal()} className="flex items-center bg-teal-500 text-white px-4 py-2 rounded-md hover:bg-teal-600 transition-colors">
                     <PlusIcon className="h-5 w-5 mr-2" />
                     Set New Goal
                 </button>

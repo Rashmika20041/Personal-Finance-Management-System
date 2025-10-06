@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import type { Expense } from '../data/mockData';
 import { mockExpenses } from '../data/mockData';
 import Modal from '../components/Modal';
@@ -54,7 +54,7 @@ const ExpensesPage = () => {
         <div>
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold text-text-primary">Expenses</h1>
-                <button onClick={() => handleOpenModal()} className="flex items-center bg-highlight text-white px-4 py-2 rounded-md hover:bg-teal-500 transition-colors">
+                <button onClick={() => handleOpenModal()} className="flex items-center bg-teal-500 text-white px-4 py-2 rounded-md hover:bg-teal-600 transition-colors">
                     <PlusIcon className="h-5 w-5 mr-2" />
                     Add Expense
                 </button>
@@ -67,7 +67,7 @@ const ExpensesPage = () => {
                     {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                 </select>
                 <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} className="bg-accent rounded-md py-2 px-3 text-text-primary focus:outline-none focus:ring-2 focus:ring-highlight" />
-                <button onClick={() => {setFilterCategory(''); setFilterDate('');}} className="px-4 py-2 rounded-md text-text-primary bg-accent hover:bg-gray-600 transition-colors">
+                <button onClick={() => {setFilterCategory(''); setFilterDate('');}} className="px-8 py-2 rounded-md text-text-primary bg-gray-300 hover:bg-gray-600 transition-colors">
                     Clear
                 </button>
             </div>
