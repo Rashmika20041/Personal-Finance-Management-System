@@ -6,15 +6,14 @@ import BudgetForm from '../components/BudgetForm';
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 const BudgetCard: React.FC<{ budget: Budget; onEdit: () => void; onDelete: () => void; }> = ({ budget, onEdit, onDelete }) => {
-    const { name, amount, spent, category, threshold } = budget;
+    const { name, amount, spent, category } = budget;
     const progress = (spent / amount) * 100;
-    
-    let progressBarColor = 'bg-highlight';
-    if (threshold && progress > threshold) {
-        progressBarColor = 'bg-red-500';
-    } else if (threshold && progress > threshold * 0.8) {
-        progressBarColor = 'bg-yellow-500';
-    }
+
+    const getProgressColor = () => {
+        if (progress >= 90) return 'bg-red-500';
+        if (progress >= 50) return 'bg-yellow-500';
+        return 'bg-green-500';
+    };
 
     return (
         <div className="bg-secondary shadow-lg rounded-lg p-6 flex flex-col justify-between transition-transform transform hover:-translate-y-1">
@@ -27,8 +26,10 @@ const BudgetCard: React.FC<{ budget: Budget; onEdit: () => void; onDelete: () =>
                     </div>
                 </div>
                 <p className="text-sm text-text-secondary mb-4">{category}</p>
-                <div className="w-full bg-accent rounded-full h-2.5 mb-2">
-                    <div className={`${progressBarColor} h-2.5 rounded-full`} style={{ width: `${progress > 100 ? 100 : progress}%` }}></div>
+                <div className="w-full bg-gray-200 rounded-full h-4 mb-2 relative">
+                    <div className={`${getProgressColor()} h-4 rounded-full flex items-center justify-center`} style={{ width: `${progress > 100 ? 100 : progress}%` }}>
+                        <span className="text-xs font-bold text-white">{progress.toFixed(0)}%</span>
+                    </div>
                 </div>
                 <div className="flex justify-between text-sm">
                     <span className="text-text-secondary">Spent: <span className="font-semibold text-text-primary">${spent.toFixed(2)}</span></span>

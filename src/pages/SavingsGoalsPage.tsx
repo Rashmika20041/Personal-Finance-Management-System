@@ -17,6 +17,12 @@ const SavingsGoalCard: React.FC<{ goal: SavingsGoal; onEdit: () => void; onDelet
     
     const daysLeft = Math.ceil((new Date(deadline).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
 
+    const getProgressColor = () => {
+        if (progress >= 80) return 'bg-green-500';
+        if (progress >= 50) return 'bg-yellow-500';
+        return 'bg-red-500';
+    };
+
     return (
         <div className="bg-secondary shadow-lg rounded-lg p-6 flex flex-col justify-between transition-transform transform hover:-translate-y-1">
             <div>
@@ -32,8 +38,8 @@ const SavingsGoalCard: React.FC<{ goal: SavingsGoal; onEdit: () => void; onDelet
                     <span className="text-xs text-text-secondary ml-3">{daysLeft > 0 ? `${daysLeft} days left` : 'Deadline passed'}</span>
                 </div>
 
-                <div className="w-full bg-accent rounded-full h-4 mb-2 relative">
-                    <div className="bg-highlight h-4 rounded-full flex items-center justify-center" style={{ width: `${progress > 100 ? 100 : progress}%` }}>
+                <div className="w-full bg-gray-200 rounded-full h-4 mb-2 relative">
+                    <div className={`${getProgressColor()} h-4 rounded-full flex items-center justify-center`} style={{ width: `${progress > 100 ? 100 : progress}%` }}>
                         <span className="text-xs font-bold text-white">{progress.toFixed(0)}%</span>
                     </div>
                 </div>

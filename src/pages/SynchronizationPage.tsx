@@ -1,16 +1,53 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowPathIcon, CheckCircleIcon, ExclamationTriangleIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import { getSyncQueue, clearSyncQueue } from '../utils/offlineSync';
 
 type SyncStatus = 'idle' | 'syncing' | 'success' | 'conflict' | 'error';
 
 const SynchronizationPage = () => {
     const [lastSyncTime, setLastSyncTime] = useState<Date | null>(new Date('2025-10-05T09:55:18Z'));
     const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
+    const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+    useEffect(() => {
+        const handleOnline = () => {
+            setIsOnline(true);
+            if (syncStatus !== 'syncing') {
+                handleSync();
+            }
+        };
+
+        const handleOffline = () => {
+            setIsOnline(false);
+        };
+
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+
+        // Initial sync on component mount if online
+        if (navigator.onLine && syncStatus === 'idle') {
+            handleSync();
+        }
+
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }, [syncStatus]);
 
     const handleSync = () => {
         setSyncStatus('syncing');
+        
         // Simulate a network request
         setTimeout(() => {
+            const syncQueue = getSyncQueue();
+            if (syncQueue.length > 0) {
+                console.log('Syncing queued data:', syncQueue);
+                // Here you would typically send the data to your central server
+                // For now, we'll just clear the queue
+                clearSyncQueue();
+            }
+
             // Randomly resolve to success or conflict for demonstration
             if (Math.random() > 0.5) {
                 setSyncStatus('success');
@@ -77,6 +114,11 @@ const SynchronizationPage = () => {
 
             <div className="bg-secondary shadow-lg rounded-lg p-8 max-w-2xl mx-auto">
                 <div className="flex flex-col items-center text-center">
+                    <div className="mb-4">
+                        <span className={`px-3 py-1 text-sm font-semibold rounded-full ${isOnline ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                            {isOnline ? 'Online' : 'Offline'}
+                        </span>
+                    </div>
                     <h2 className="text-xl font-bold text-text-primary mb-2">Sync Local & Central Databases</h2>
                     <p className="text-text-secondary mb-6">
                         Keep your data up-to-date across all your devices by syncing with the central server.

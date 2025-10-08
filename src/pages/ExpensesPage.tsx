@@ -1,16 +1,29 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { Expense } from '../data/mockData';
 import { mockExpenses } from '../data/mockData';
 import Modal from '../components/Modal';
 import ExpenseForm from '../components/ExpenseForm';
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { getLocalExpenses, setLocalExpenses, addToSyncQueue } from '../utils/offlineSync';
 
 const ExpensesPage = () => {
-    const [expenses, setExpenses] = useState<Expense[]>(mockExpenses);
+    const [expenses, setExpenses] = useState<Expense[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [expenseToEdit, setExpenseToEdit] = useState<Expense | null>(null);
     const [filterCategory, setFilterCategory] = useState('');
     const [filterDate, setFilterDate] = useState('');
+
+    useEffect(() => {
+        // Load initial expenses from local storage
+        const localExpenses = getLocalExpenses();
+        if (localExpenses.length > 0) {
+            setExpenses(localExpenses);
+        } else {
+            // If no local data, use mock data and save it
+            setExpenses(mockExpenses);
+            setLocalExpenses(mockExpenses);
+        }
+    }, []);
 
     const handleOpenModal = (expense?: Expense) => {
         setExpenseToEdit(expense || null);
@@ -23,14 +36,27 @@ const ExpensesPage = () => {
     };
 
     const handleFormSubmit = (expenseData: Omit<Expense, 'id'> | Expense) => {
+        const isOnline = navigator.onLine;
+        let newExpenses;
+
         if ('id' in expenseData) {
             // Edit expense
-            setExpenses(expenses.map(exp => exp.id === expenseData.id ? expenseData : exp));
+            newExpenses = expenses.map(exp => exp.id === expenseData.id ? expenseData : exp);
         } else {
             // Add new expense
             const newExpense = { ...expenseData, id: Date.now() };
-            setExpenses([newExpense, ...expenses]);
+            newExpenses = [newExpense, ...expenses];
         }
+        
+        setExpenses(newExpenses);
+        setLocalExpenses(newExpenses);
+
+        if (!isOnline) {
+            // If offline, add to sync queue
+            const expenseToQueue = 'id' in expenseData ? expenseData : newExpenses[0];
+            addToSyncQueue(expenseToQueue);
+        }
+        
         handleCloseModal();
     };
 
