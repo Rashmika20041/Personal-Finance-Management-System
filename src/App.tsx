@@ -10,6 +10,7 @@ import SynchronizationPage from './pages/SynchronizationPage';
 import SettingsPage from './pages/SettingsPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import IncomePage from './pages/IncomePage';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
         <Layout>
           <Routes>
             <Route path="/" element={<DashboardPage />} />
+            <Route path="/income" element={<IncomePage />} />
             <Route path="/expenses" element={<ExpensesPage />} />
             <Route path="/budgets" element={<BudgetsPage />} />
             <Route path="/savings" element={<SavingsGoalsPage />} />

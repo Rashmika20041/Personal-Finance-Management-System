@@ -26,6 +26,15 @@ export interface SavingsGoal {
   priority: 'High' | 'Medium' | 'Low';
 }
 
+export interface Income {
+  id: number;
+  date: string;
+  source: string;
+  amount: number;
+  type: 'Salary' | 'Freelance' | 'Investment' | 'Business' | 'Other';
+  notes: string;
+}
+
 export const mockExpenses: Expense[] = [
     { id: 1, date: "2025-09-28", category: "Groceries", amount: 75.50, paymentMethod: "Credit Card", notes: "Weekly shopping" },
     { id: 2, date: "2025-09-27", category: "Utilities", amount: 150.00, paymentMethod: "Bank Transfer", notes: "Electricity bill" },
@@ -45,6 +54,14 @@ export const mockBudgets: Budget[] = [
 export const mockSavingsGoals: SavingsGoal[] = [
     { id: 1, name: "New Laptop", targetAmount: 1500, currentContribution: 750, deadline: "2026-06-30", priority: "High" },
     { id: 2, name: "Vacation Fund", targetAmount: 2000, currentContribution: 1500, deadline: "2026-12-31", priority: "Medium" },
+];
+
+export const mockIncome: Income[] = [
+    { id: 1, date: "2025-09-30", source: "Software Engineer Salary", amount: 5000.00, type: "Salary", notes: "Monthly salary payment" },
+    { id: 2, date: "2025-09-15", source: "Freelance Web Development", amount: 800.00, type: "Freelance", notes: "Client project payment" },
+    { id: 3, date: "2025-09-10", source: "Stock Dividends", amount: 150.00, type: "Investment", notes: "Quarterly dividend payment" },
+    { id: 4, date: "2025-09-01", source: "Software Engineer Salary", amount: 5000.00, type: "Salary", notes: "Monthly salary payment" },
+    { id: 5, date: "2025-08-30", source: "Software Engineer Salary", amount: 5000.00, type: "Salary", notes: "Monthly salary payment" },
 ];
 
 export const savingsTrendData = [

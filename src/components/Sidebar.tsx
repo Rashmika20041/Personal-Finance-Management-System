@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import logo from '../assets/logo1.png';
+import logo from '../assets/logo2.png';
 import {
   ChartBarIcon,
   CreditCardIcon,
@@ -8,10 +8,12 @@ import {
   DocumentChartBarIcon,
   ArrowPathIcon,
   Cog6ToothIcon,
+  BanknotesIcon,
 } from '@heroicons/react/24/outline';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: ChartBarIcon },
+  { name: 'Income', href: '/income', icon: BanknotesIcon },
   { name: 'Expenses', href: '/expenses', icon: CreditCardIcon },
   { name: 'Budgets', href: '/budgets', icon: CircleStackIcon },
   { name: 'Savings Goals', href: '/savings', icon: TrophyIcon },
@@ -24,7 +26,7 @@ const Sidebar = () => {
   return (
     <div className="w-64 bg-gray-800 p-5 flex flex-col min-h-screen">
       <div className="flex items-center mb-10">
-        <img src={logo} alt="Logo" className="h-18 w-29 ml-6" />
+        <img src={logo} alt="Logo" className="h-13 w-13 ml-6" />
       </div>
       <nav className="flex-1">
         <ul>
