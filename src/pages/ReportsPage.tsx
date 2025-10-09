@@ -1,4 +1,4 @@
-import { mockExpenses, mockBudgets, savingsTrendData } from '../data/mockData';
+import { mockExpenses, mockBudgets, savingsTrendData, mockSavingsGoals } from '../data/mockData';
 import { 
     BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, 
     PieChart, Pie, Cell, LineChart, Line, CartesianGrid 
@@ -32,6 +32,12 @@ const ReportsPage = () => {
         { name: 'Nov', forecast: 600 },
         { name: 'Dec', forecast: 650 },
     ];
+
+    // Data for Savings Goal Progress
+    const savingsGoalProgressData = mockSavingsGoals.map(goal => ({
+        name: goal.name,
+        progress: (goal.currentContribution / goal.targetAmount) * 100,
+    }));
 
     const CustomTooltip = ({ active, payload, label }: any) => {
         if (active && payload && payload.length) {
@@ -114,6 +120,20 @@ const ReportsPage = () => {
                             <Line type="monotone" dataKey="savings" name="Actual Savings" stroke="#38b2ac" strokeWidth={2} />
                             <Line type="monotone" dataKey="forecast" name="Forecasted Savings" stroke="#a0aec0" strokeDasharray="5 5" />
                         </LineChart>
+                    </ResponsiveContainer>
+                </div>
+
+                {/* Savings Goal Progress */}
+                <div className="bg-secondary p-6 rounded-lg shadow-lg">
+                    <h2 className="text-xl font-bold text-text-primary mb-4">Savings Goal Progress</h2>
+                    <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={savingsGoalProgressData} layout="vertical" margin={{ top: 5, right: 20, left: 40, bottom: 5 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#4a5568" />
+                            <XAxis type="number" stroke="#a0aec0" domain={[0, 100]} unit="%" />
+                            <YAxis type="category" dataKey="name" stroke="#a0aec0" width={100} />
+                            <Tooltip cursor={{ fill: '#4a5568' }} formatter={(value: number) => `${value.toFixed(2)}%`} />
+                            <Bar dataKey="progress" name="Progress" fill="#9f7aea" />
+                        </BarChart>
                     </ResponsiveContainer>
                 </div>
 

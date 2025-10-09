@@ -1,19 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowDownTrayIcon, ArrowUpTrayIcon, SunIcon, MoonIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import React from 'react';
+import { ArrowDownTrayIcon, ArrowUpTrayIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 
 const SettingsPage = () => {
-    const [currency, setCurrency] = useState('USD');
-    // Defaulting to 'dark' as per our app's design
-    const [theme, setTheme] = useState<'light' | 'dark'>('dark');
-
-    useEffect(() => {
-        // This logic would apply the theme to the whole app
-        if (theme === 'light') {
-            document.documentElement.classList.remove('dark');
-        } else {
-            document.documentElement.classList.add('dark');
-        }
-    }, [theme]);
     
     const handleExport = () => {
         // In a real app, you would serialize your local DB data here
@@ -55,7 +43,7 @@ const SettingsPage = () => {
         <div>
             <h1 className="text-3xl font-bold text-text-primary mb-8">Settings & Backup</h1>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 gap-8">
                 {/* Data Management Section */}
                 <div className="bg-secondary shadow-lg rounded-lg p-6">
                     <h2 className="text-xl font-bold text-text-primary mb-4">Data Management</h2>
@@ -85,24 +73,6 @@ const SettingsPage = () => {
                                 </span>
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                {/* Preferences Section */}
-                <div className="bg-secondary shadow-lg rounded-lg p-6">
-                    <h2 className="text-xl font-bold text-text-primary mb-4">Preferences</h2>
-                    <div className="space-y-6">
-                        <div>
-                            <label htmlFor="currency" className="block text-lg font-semibold text-text-primary mb-2">Currency</label>
-                            <select id="currency" value={currency} onChange={(e) => setCurrency(e.target.value)} className="w-full bg-accent border-transparent rounded-md py-2 px-3 text-text-primary focus:outline-none focus:ring-2 focus:ring-highlight">
-                                <option value="USD">USD - United States Dollar</option>
-                                <option value="EUR">EUR - Euro</option>
-                                <option value="GBP">GBP - British Pound</option>
-                                <option value="JPY">JPY - Japanese Yen</option>
-                                <option value="INR">INR - Indian Rupee</option>
-                            </select>
-                        </div>
-                    
                     </div>
                 </div>
             </div>

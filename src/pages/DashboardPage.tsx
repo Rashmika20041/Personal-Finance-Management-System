@@ -24,15 +24,14 @@ const DashboardPage = () => {
     <div>
       <h1 className="text-3xl font-bold text-text-primary mb-6">Welcome back, Rashmika!</h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card title="Total Expenses (This Month)" value={`$${totalExpenses.toFixed(2)}`} />
-        <Card title="Budget Usage" value={`${budgetUsage.toFixed(1)}%`}>
-            <div className="w-full bg-accent rounded-full h-2.5 mt-3">
-                <div className="bg-highlight h-2.5 rounded-full" style={{ width: `${budgetUsage}%` }}></div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <Card title="Total Expenses (This Month)" value={`$${totalExpenses.toFixed(2)}`} className="bg-gradient-to-br from-red-50 to-red-100 border-l-4 border-red-500 hover:shadow-lg transition-all duration-300" />
+        <Card title="Budget Usage" value={`${budgetUsage.toFixed(1)}%`} className="bg-gradient-to-br from-blue-50 to-blue-100 border-l-4 border-blue-500 hover:shadow-lg transition-all duration-300">
+            <div className="w-full bg-gray-200 rounded-full h-3 mt-3 shadow-inner">
+                <div className={`h-3 rounded-full transition-all duration-500 ${budgetUsage > 90 ? 'bg-red-500' : budgetUsage > 60 ? 'bg-yellow-500' : 'bg-green-500'}`} style={{ width: `${budgetUsage}%` }}></div>
             </div>
         </Card>
-        <Card title="Total Savings" value={`$${totalSavings.toFixed(2)}`} />
-        <Card title="Upcoming Bill" value="$150.00 (Electricity)" />
+        <Card title="Total Savings" value={`$${totalSavings.toFixed(2)}`} className="bg-gradient-to-br from-green-50 to-green-100 border-l-4 border-green-500 hover:shadow-lg transition-all duration-300" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
