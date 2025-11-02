@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { useState } from 'react';
 import logo from '../assets/logo2.png';
-import { apiService } from '../utils/apiService';
+import { useAuth } from '../contexts/AuthContext';
 import {
   ChartBarIcon,
   CreditCardIcon,
@@ -27,6 +27,7 @@ const navigation = [
 
 const Sidebar = () => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const { logout } = useAuth();
   return (
     <div className="w-54 sm:w-48 lg:w-62 bg-gray-800 p-3 flex flex-col min-h-screen">
       <div className="flex items-center justify-center mb-6">
@@ -98,7 +99,7 @@ const Sidebar = () => {
                 </button>
                 <button
                   onClick={() => {
-                    apiService.logout();
+                    logout();
                     window.location.href = '/login';
                   }}
                   className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"

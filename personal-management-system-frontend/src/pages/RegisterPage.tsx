@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { EyeIcon, EyeSlashIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 import logo from '../assets/logo2.png';
-import { apiService } from '../utils/apiService';
+import { useAuth } from '../contexts/AuthContext';
 
 const RegisterPage = () => {
   const [formData, setFormData] = useState({
@@ -18,6 +18,7 @@ const RegisterPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
   const navigate = useNavigate();
+  const { register } = useAuth();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -69,7 +70,7 @@ const RegisterPage = () => {
     setIsLoading(true);
 
     try {
-      await apiService.register({
+      await register({
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
