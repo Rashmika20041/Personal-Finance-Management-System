@@ -1,8 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import type { SavingsGoal } from '../data/mockData';
 
+interface SavingsGoalFormData {
+  name: string;
+  targetAmount: number;
+  currentContribution: number;
+  deadline: string;
+  priority: 'High' | 'Medium' | 'Low';
+}
+
 interface SavingsGoalFormProps {
-  onSubmit: (goal: Omit<SavingsGoal, 'id'> | SavingsGoal) => void;
+  onSubmit: (goal: SavingsGoalFormData & { _id?: string }) => void;
   onClose: () => void;
   goalToEdit?: SavingsGoal | null;
 }
@@ -31,13 +39,13 @@ const SavingsGoalForm: React.FC<SavingsGoalFormProps> = ({ onSubmit, onClose, go
     }
   }, [goalToEdit]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !targetAmount || !deadline) {
         alert("Please fill in all required fields.");
         return;
     }
-    const goalData = {
+    const goalData: SavingsGoalFormData = {
       name,
       targetAmount: parseFloat(targetAmount),
       currentContribution: parseFloat(currentContribution),
@@ -45,10 +53,17 @@ const SavingsGoalForm: React.FC<SavingsGoalFormProps> = ({ onSubmit, onClose, go
       priority,
     };
 
-    if (goalToEdit) {
-      onSubmit({ ...goalToEdit, ...goalData });
-    } else {
-      onSubmit(goalData);
+    try {
+      if (goalToEdit) {
+        // For editing, include the _id
+        await onSubmit({ ...goalData, _id: goalToEdit._id });
+      } else {
+        // For creating, don't include _id
+        await onSubmit(goalData);
+      }
+    } catch (error) {
+      console.error('Error submitting savings goal:', error);
+      alert('Failed to save savings goal. Please try again.');
     }
   };
 

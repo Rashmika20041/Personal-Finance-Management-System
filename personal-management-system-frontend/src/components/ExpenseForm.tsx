@@ -28,28 +28,34 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onSubmit, onClose, expenseToE
     }
   }, [expenseToEdit]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!amount || !category || !date) {
-        alert("Please fill in all required fields.");
-        return;
-    }
-    const expenseData = {
-      amount: parseFloat(amount),
-      category,
-      date,
-      paymentMethod,
-      notes: '',
-    };
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!amount || !category || !date) {
+            alert("Please fill in all required fields.");
+            return;
+        }
 
-    if (expenseToEdit) {
-      onSubmit({ ...expenseData, id: expenseToEdit.id });
-    } else {
-      onSubmit(expenseData);
-    }
-  };
+        const expenseData = {
+            amount: parseFloat(amount),
+            category,
+            date,
+            paymentMethod,
+            notes: '',
+        };
 
-  const categories = ["Groceries", "Utilities", "Transport", "Entertainment", "Dining Out", "Health", "Shopping", "Other"];
+        try {
+            if (expenseToEdit) {
+                // For editing, include the id
+                await onSubmit({ ...expenseData, id: expenseToEdit.id });
+            } else {
+                // For creating, don't include id
+                await onSubmit(expenseData);
+            }
+        } catch (error) {
+            console.error('Error submitting expense:', error);
+            alert('Failed to save expense. Please try again.');
+        }
+    };  const categories = ["Groceries", "Utilities", "Transport", "Entertainment", "Dining Out", "Health", "Shopping", "Other"];
   const paymentMethods = ["Credit Card", "Debit Card", "Bank Transfer", "Cash"];
 
   return (

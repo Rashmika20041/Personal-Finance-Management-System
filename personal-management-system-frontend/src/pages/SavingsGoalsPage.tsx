@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import type {  SavingsGoal } from '../data/mockData';
+import React, { useState, useEffect } from 'react';
+import type { SavingsGoal } from '../data/mockData';
 import { mockSavingsGoals } from '../data/mockData';
 import Modal from '../components/Modal';
 import SavingsGoalForm from '../components/SavingsGoalForm';
@@ -14,7 +14,7 @@ const priorityColors = {
 const SavingsGoalCard: React.FC<{ goal: SavingsGoal; onEdit: () => void; onDelete: () => void; }> = ({ goal, onEdit, onDelete }) => {
     const { name, targetAmount, currentContribution, deadline, priority } = goal;
     const progress = (currentContribution / targetAmount) * 100;
-    
+
     const daysLeft = Math.ceil((new Date(deadline).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
 
     const getProgressColor = () => {
@@ -54,9 +54,50 @@ const SavingsGoalCard: React.FC<{ goal: SavingsGoal; onEdit: () => void; onDelet
 };
 
 const SavingsGoalsPage = () => {
-    const [goals, setGoals] = useState<SavingsGoal[]>(mockSavingsGoals);
+    const [goals, setGoals] = useState<SavingsGoal[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [goalToEdit, setGoalToEdit] = useState<SavingsGoal | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        fetchSavingsGoals();
+    }, []);
+
+    const getToken = () => localStorage.getItem('token');
+
+    const fetchSavingsGoals = async () => {
+        const token = getToken();
+        if (!token) {
+            setGoals(mockSavingsGoals);
+            setLoading(false);
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const response = await fetch('http://localhost:5000/api/savings-goals', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setGoals(data); // Use data directly since interface now matches API
+            } else {
+                console.error('Failed to fetch savings goals');
+                // Fallback to mock data if API fails
+                setGoals(mockSavingsGoals);
+            }
+        } catch (err) {
+            console.error('Error fetching savings goals:', err);
+            // Fallback to mock data if API fails
+            setGoals(mockSavingsGoals);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleOpenModal = (goal?: SavingsGoal) => {
         setGoalToEdit(goal || null);
@@ -68,19 +109,65 @@ const SavingsGoalsPage = () => {
         setGoalToEdit(null);
     };
 
-    const handleFormSubmit = (goalData: Omit<SavingsGoal, 'id'> | SavingsGoal) => {
-        if ('id' in goalData) {
-            setGoals(goals.map(g => g.id === goalData.id ? goalData : g));
-        } else {
-            const newGoal = { ...goalData, id: Date.now() };
-            setGoals([newGoal, ...goals]);
+    const handleFormSubmit = async (goalData: { name: string; targetAmount: number; currentContribution: number; deadline: string; priority: 'High' | 'Medium' | 'Low'; _id?: string }) => {
+        const token = getToken();
+        if (!token) return;
+
+        try {
+            let response;
+            const method = goalData._id ? 'PUT' : 'POST';
+            const url = goalData._id
+                ? `http://localhost:5000/api/savings-goals/${goalData._id}`
+                : 'http://localhost:5000/api/savings-goals';
+
+            // Remove _id from the data sent to API for both create and update
+            const { _id, ...dataToSend } = goalData;
+
+            response = await fetch(url, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(dataToSend)
+            });
+
+            if (response.ok) {
+                await fetchSavingsGoals(); // Refresh the list
+                handleCloseModal();
+            } else {
+                const errorData = await response.json();
+                setError(errorData.message || 'Failed to save savings goal');
+            }
+        } catch (err) {
+            console.error('Error saving savings goal:', err);
+            setError('Network error. Please try again.');
         }
-        handleCloseModal();
     };
 
-    const handleDeleteGoal = (id: number) => {
+    const handleDeleteGoal = async (id: string) => {
+        const token = getToken();
+        if (!token) return;
+
         if (window.confirm("Are you sure you want to delete this savings goal?")) {
-            setGoals(goals.filter(g => g.id !== id));
+            try {
+                const response = await fetch(`http://localhost:5000/api/savings-goals/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    await fetchSavingsGoals(); // Refresh the list
+                } else {
+                    const errorData = await response.json();
+                    setError(errorData.message || 'Failed to delete savings goal');
+                }
+            } catch (err) {
+                console.error('Error deleting savings goal:', err);
+                setError('Network error. Please try again.');
+            }
         }
     };
 
@@ -94,16 +181,29 @@ const SavingsGoalsPage = () => {
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {goals.map(goal => (
-                    <SavingsGoalCard 
-                        key={goal.id} 
-                        goal={goal} 
-                        onEdit={() => handleOpenModal(goal)}
-                        onDelete={() => handleDeleteGoal(goal.id)}
-                    />
-                ))}
-            </div>
+            {error && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+                    {error}
+                    <button onClick={() => setError('')} className="float-right ml-4">×</button>
+                </div>
+            )}
+
+            {loading ? (
+                <div className="text-center py-8">
+                    <div className="text-text-primary">Loading savings goals...</div>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {goals.map(goal => (
+                        <SavingsGoalCard
+                            key={goal._id}
+                            goal={goal}
+                            onEdit={() => handleOpenModal(goal)}
+                            onDelete={() => handleDeleteGoal(goal._id)}
+                        />
+                    ))}
+                </div>
+            )}
 
             <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={goalToEdit ? 'Edit Savings Goal' : 'Set New Savings Goal'}>
                 <SavingsGoalForm onSubmit={handleFormSubmit} onClose={handleCloseModal} goalToEdit={goalToEdit} />

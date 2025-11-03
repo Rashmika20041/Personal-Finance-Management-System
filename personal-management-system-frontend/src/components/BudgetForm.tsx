@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { Budget } from '../data/mockData';
 
 interface BudgetFormProps {
-  onSubmit: (budget: Omit<Budget, 'id' | 'spent'> | Budget) => void;
+  onSubmit: (budget: any) => void;
   onClose: () => void;
   budgetToEdit?: Budget | null;
 }
@@ -20,7 +20,7 @@ const BudgetForm: React.FC<BudgetFormProps> = ({ onSubmit, onClose, budgetToEdit
       setCategory(budgetToEdit.category);
       setAmount(budgetToEdit.amount.toString());
       setDuration(budgetToEdit.duration);
-      setThreshold(budgetToEdit.threshold?.toString() || '');
+      setThreshold(budgetToEdit.threshold?.toString() || '80');
     } else {
       setName('');
       setCategory('');
@@ -41,14 +41,10 @@ const BudgetForm: React.FC<BudgetFormProps> = ({ onSubmit, onClose, budgetToEdit
       category,
       amount: parseFloat(amount),
       duration,
-      threshold: threshold ? parseInt(threshold) : undefined,
+      threshold: threshold ? parseInt(threshold) : 80,
     };
 
-    if (budgetToEdit) {
-      onSubmit({ ...budgetToEdit, ...budgetData });
-    } else {
-      onSubmit({ ...budgetData, spent: 0 });
-    }
+    onSubmit(budgetData);
   };
 
   const categories = ["Groceries", "Utilities", "Transport", "Entertainment", "Dining Out", "Health", "Shopping", "Other"];

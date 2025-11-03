@@ -8,22 +8,32 @@ export interface Expense {
 }
 
 export interface Budget {
-  id: number;
+  _id: string;
+  user: string;
   name: string;
   category: string;
   amount: number;
   spent: number;
   duration: string;
   threshold?: number; // Optional: percentage for alert
+  synced: boolean;
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface SavingsGoal {
-  id: number;
+  _id: string;
+  user: string;
   name: string;
   targetAmount: number;
   currentContribution: number;
   deadline: string;
   priority: 'High' | 'Medium' | 'Low';
+  synced: boolean;
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Income {
@@ -46,15 +56,15 @@ export const mockExpenses: Expense[] = [
 ];
 
 export const mockBudgets: Budget[] = [
-    { id: 1, name: "Monthly Groceries", category: "Groceries", amount: 400, spent: 120.70, duration: "Monthly", threshold: 80 },
-    { id: 2, name: "Entertainment Fund", category: "Entertainment", amount: 150, spent: 50.00, duration: "Monthly", threshold: 75 },
-    { id: 3, name: "Transport Budget", category: "Transport", amount: 100, spent: 30.00, duration: "Monthly", threshold: 90 },
-    { id: 4, name: "Savings Goal", category: "Savings", amount: 500, spent: 200.00, duration: "Monthly", threshold: 80 },
+    { _id: "1", user: "user1", name: "Monthly Groceries", category: "Groceries", amount: 400, spent: 120.70, duration: "Monthly", threshold: 80, synced: false, isDeleted: false, createdAt: "2025-11-03T10:00:00.000Z", updatedAt: "2025-11-03T10:00:00.000Z" },
+    { _id: "2", user: "user1", name: "Entertainment Fund", category: "Entertainment", amount: 150, spent: 50.00, duration: "Monthly", threshold: 75, synced: false, isDeleted: false, createdAt: "2025-11-03T10:00:00.000Z", updatedAt: "2025-11-03T10:00:00.000Z" },
+    { _id: "3", user: "user1", name: "Transport Budget", category: "Transport", amount: 100, spent: 30.00, duration: "Monthly", threshold: 90, synced: false, isDeleted: false, createdAt: "2025-11-03T10:00:00.000Z", updatedAt: "2025-11-03T10:00:00.000Z" },
+    { _id: "4", user: "user1", name: "Savings Goal", category: "Savings", amount: 500, spent: 200.00, duration: "Monthly", threshold: 80, synced: false, isDeleted: false, createdAt: "2025-11-03T10:00:00.000Z", updatedAt: "2025-11-03T10:00:00.000Z" },
 ];
 
 export const mockSavingsGoals: SavingsGoal[] = [
-    { id: 1, name: "New Laptop", targetAmount: 1500, currentContribution: 750, deadline: "2026-06-30", priority: "High" },
-    { id: 2, name: "Vacation Fund", targetAmount: 2000, currentContribution: 1500, deadline: "2026-12-31", priority: "Medium" },
+    { _id: "1", user: "user1", name: "New Laptop", targetAmount: 1500, currentContribution: 750, deadline: "2026-06-30", priority: "High", synced: false, isDeleted: false, createdAt: "2025-11-03T10:00:00.000Z", updatedAt: "2025-11-03T10:00:00.000Z" },
+    { _id: "2", user: "user1", name: "Vacation Fund", targetAmount: 2000, currentContribution: 1500, deadline: "2026-12-31", priority: "Medium", synced: false, isDeleted: false, createdAt: "2025-11-03T10:00:00.000Z", updatedAt: "2025-11-03T10:00:00.000Z" },
 ];
 
 export const mockIncome: Income[] = [

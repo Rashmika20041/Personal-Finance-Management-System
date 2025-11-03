@@ -3,6 +3,11 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./database/db');
 const authRoutes = require('./routes/auth-routes');
+const incomeRoutes = require('./routes/income-routes');
+const expenseRoutes = require('./routes/expense-routes');
+const savingsGoalsRoutes = require('./routes/savings-goals-routes');
+const budgetRoutes = require('./routes/budget-routes');
+const syncRoutes = require('./routes/sync-routes');
 
 dotenv.config();
 
@@ -27,6 +32,11 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/income', incomeRoutes);
+app.use('/api/expense', expenseRoutes);
+app.use('/api/savings-goals', savingsGoalsRoutes);
+app.use('/api/budgets', budgetRoutes);
+app.use('/api/sync', syncRoutes);
 
 // Start server
 app.listen(port, () => {

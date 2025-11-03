@@ -1,8 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import type { Income } from '../data/mockData';
+
+interface Income {
+  _id?: string;
+  amount: number;
+  source: string;
+  date: string;
+  description?: string;
+}
 
 interface IncomeFormProps {
-  onSubmit: (income: Omit<Income, 'id'> | Income) => void;
+  onSubmit: (income: Omit<Income, '_id'> & { _id?: string }) => void;
   onClose: () => void;
   incomeToEdit?: Income | null;
 }
@@ -11,20 +18,20 @@ const IncomeForm: React.FC<IncomeFormProps> = ({ onSubmit, onClose, incomeToEdit
   const [amount, setAmount] = useState('');
   const [source, setSource] = useState('');
   const [date, setDate] = useState('');
-  const [type, setType] = useState<Income['type']>('Salary');
+  const [description, setDescription] = useState('');
 
   useEffect(() => {
     if (incomeToEdit) {
       setAmount(incomeToEdit.amount.toString());
       setSource(incomeToEdit.source);
       setDate(incomeToEdit.date);
-      setType(incomeToEdit.type);
+      setDescription(incomeToEdit.description || '');
     } else {
       // Reset form for new income
       setAmount('');
       setSource('');
       setDate(new Date().toISOString().split('T')[0]); // Default to today
-      setType('Salary');
+      setDescription('');
     }
   }, [incomeToEdit]);
 
@@ -38,18 +45,15 @@ const IncomeForm: React.FC<IncomeFormProps> = ({ onSubmit, onClose, incomeToEdit
       amount: parseFloat(amount),
       source,
       date,
-      type,
-      notes: '',
+      description: description || undefined,
     };
 
-    if (incomeToEdit) {
-      onSubmit({ ...incomeData, id: incomeToEdit.id });
+    if (incomeToEdit?._id) {
+      onSubmit({ ...incomeData, _id: incomeToEdit._id });
     } else {
       onSubmit(incomeData);
     }
   };
-
-  const incomeTypes: Income['type'][] = ["Salary", "Freelance", "Investment", "Business", "Other"];
 
   return (
     <div className="max-w-lg sm:max-w-xl mx-auto">
@@ -92,25 +96,6 @@ const IncomeForm: React.FC<IncomeFormProps> = ({ onSubmit, onClose, incomeToEdit
           />
         </div>
 
-        {/* Type Field */}
-        <div className="flex flex-col">
-          <label htmlFor="type" className="flex items-center text-sm font-medium text-gray-600 mb-2">
-            Type *
-          </label>
-          <select
-            id="type"
-            value={type}
-            onChange={(e) => setType(e.target.value as Income['type'])}
-            className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
-            required
-          >
-            <option value="" disabled>Select income type</option>
-            {incomeTypes.map(incomeType => (
-              <option key={incomeType} value={incomeType} className="py-2">{incomeType}</option>
-            ))}
-          </select>
-        </div>
-
         {/* Date Field */}
         <div className="flex flex-col">
           <label htmlFor="date" className="flex items-center text-sm font-medium text-gray-600 mb-2">
@@ -123,6 +108,21 @@ const IncomeForm: React.FC<IncomeFormProps> = ({ onSubmit, onClose, incomeToEdit
             onChange={(e) => setDate(e.target.value)}
             className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
             required
+          />
+        </div>
+
+        {/* Description Field */}
+        <div className="flex flex-col">
+          <label htmlFor="description" className="flex items-center text-sm font-medium text-gray-600 mb-2">
+            Description (Optional)
+          </label>
+          <textarea
+            id="description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+            placeholder="Additional notes about this income"
+            rows={3}
           />
         </div>
 

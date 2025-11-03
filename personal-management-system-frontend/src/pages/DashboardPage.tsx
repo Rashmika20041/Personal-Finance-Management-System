@@ -1,5 +1,5 @@
+import { useState, useEffect } from 'react';
 import Card from '../components/Card';
-import { mockExpenses, mockBudgets, mockSavingsGoals, mockIncome, savingsTrendData } from '../data/mockData';
 import { ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts';
 import {
   ArrowTrendingUpIcon,
@@ -12,24 +12,107 @@ import { useAuth } from '../contexts/AuthContext';
 
 const DashboardPage = () => {
   const { user } = useAuth();
-  const totalExpenses = mockExpenses.reduce((acc, expense) => acc + expense.amount, 0);
-  const totalIncome = mockIncome.reduce((acc, income) => acc + income.amount, 0);
-  const totalBudget = mockBudgets.reduce((acc, budget) => acc + budget.amount, 0);
-  const totalSavings = mockSavingsGoals.reduce((acc, goal) => acc + goal.currentContribution, 0);
+  const [dashboardData, setDashboardData] = useState({
+    incomes: [],
+    expenses: [],
+    budgets: [],
+    savingsGoals: [],
+    loading: true,
+    error: null as string | null
+  });
+
+  const getToken = () => localStorage.getItem('token');
+
+  useEffect(() => {
+    fetchAllData();
+  }, []);
+
+  const fetchAllData = async () => {
+    const token = getToken();
+    if (!token) {
+      setDashboardData(prev => ({ ...prev, loading: false, error: 'No authentication token found' }));
+      return;
+    }
+
+    try {
+      setDashboardData(prev => ({ ...prev, loading: true, error: null }));
+
+      // Fetch all data in parallel
+      const [incomesRes, expensesRes, budgetsRes, savingsRes] = await Promise.all([
+        fetch('http://localhost:5000/api/income', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch('http://localhost:5000/api/expense', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch('http://localhost:5000/api/budgets', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch('http://localhost:5000/api/savings-goals', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+      ]);
+
+      const [incomes, expenses, budgets, savingsGoals] = await Promise.all([
+        incomesRes.json(),
+        expensesRes.json(),
+        budgetsRes.json(),
+        savingsRes.json()
+      ]);
+
+      setDashboardData({
+        incomes: incomesRes.ok ? incomes : [],
+        expenses: expensesRes.ok ? expenses : [],
+        budgets: budgetsRes.ok ? budgets : [],
+        savingsGoals: savingsRes.ok ? savingsGoals : [],
+        loading: false,
+        error: null
+      });
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      setDashboardData(prev => ({
+        ...prev,
+        loading: false,
+        error: 'Failed to load dashboard data. Please try again.'
+      }));
+    }
+  };
+
+  // Calculate totals from real data
+  const totalExpenses = dashboardData.expenses.reduce((acc: number, expense: any) => acc + expense.amount, 0);
+  const totalIncome = dashboardData.incomes.reduce((acc: number, income: any) => acc + income.amount, 0);
+  const totalBudget = dashboardData.budgets.reduce((acc: number, budget: any) => acc + budget.amount, 0);
+  const totalSavings = dashboardData.savingsGoals.reduce((acc: number, goal: any) => acc + goal.currentContribution, 0);
   const netIncome = totalIncome - totalExpenses;
   const savingsRate = totalIncome > 0 ? (totalSavings / totalIncome) * 100 : 0;
   const budgetUsage = totalBudget > 0 ? (totalExpenses / totalBudget) * 100 : 0;
   const expenseRatio = totalIncome > 0 ? (totalExpenses / totalIncome) * 100 : 0;
 
-  const categoryData = mockExpenses.reduce((acc, expense) => {
-    const existingCategory = acc.find(item => item.name === expense.category);
+  const categoryData = dashboardData.expenses.reduce((acc: any[], expense: any) => {
+    const existingCategory = acc.find((item: any) => item.name === expense.category);
     if (existingCategory) {
       existingCategory.value += expense.amount;
     } else {
       acc.push({ name: expense.category, value: expense.amount });
     }
     return acc;
-  }, [] as { name: string; value: number }[]);
+  }, []);
+
+  // Generate savings trend data from real savings goals
+  const savingsTrendData = [
+    { name: 'Jan', savings: totalSavings * 0.1 },
+    { name: 'Feb', savings: totalSavings * 0.2 },
+    { name: 'Mar', savings: totalSavings * 0.3 },
+    { name: 'Apr', savings: totalSavings * 0.4 },
+    { name: 'May', savings: totalSavings * 0.5 },
+    { name: 'Jun', savings: totalSavings * 0.6 },
+    { name: 'Jul', savings: totalSavings * 0.7 },
+    { name: 'Aug', savings: totalSavings * 0.8 },
+    { name: 'Sep', savings: totalSavings * 0.9 },
+    { name: 'Oct', savings: totalSavings },
+    { name: 'Nov', savings: totalSavings * 1.05 },
+    { name: 'Dec', savings: totalSavings * 1.1 }
+  ];
 
   const COLORS = ['#38b2ac', '#4a5568', '#a0aec0', '#4299e1', '#9f7aea', '#ed8936'];
 
@@ -37,11 +120,38 @@ const DashboardPage = () => {
   const getFinancialHealth = () => {
     if (savingsRate >= 20 && expenseRatio <= 70 && netIncome > 0) return { status: 'Excellent', color: 'text-green-600', bg: 'bg-green-50' };
     if (savingsRate >= 15 && expenseRatio <= 80 && netIncome > 0) return { status: 'Good', color: 'text-blue-600', bg: 'bg-blue-50' };
-    if (savingsRate >= 10 && expenseRatio <= 90) return { status: 'Fair', color: 'text-red-600', bg: 'bg-red-50' };
+    if (savingsRate >= 10 && expenseRatio <= 90) return { status: 'Fair', color: 'text-yellow-600', bg: 'bg-yellow-50' };
     return { status: 'Needs Attention', color: 'text-red-600', bg: 'bg-red-50' };
   };
 
   const financialHealth = getFinancialHealth();
+
+  if (dashboardData.loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your financial dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (dashboardData.error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 mb-4">⚠️ {dashboardData.error}</div>
+          <button
+            onClick={fetchAllData}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">

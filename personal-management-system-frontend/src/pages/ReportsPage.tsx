@@ -1,14 +1,84 @@
-import { mockExpenses, mockBudgets, savingsTrendData, mockSavingsGoals, mockIncome } from '../data/mockData';
-import { 
-    BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, 
-    PieChart, Pie, Cell, LineChart, Line, CartesianGrid 
+import  { useState, useEffect } from 'react';
+import { savingsTrendData } from '../data/mockData';
+import type { Expense, Budget, SavingsGoal, Income } from '../data/mockData';
+import {
+    BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer,
+    PieChart, Pie, Cell, LineChart, Line, CartesianGrid
 } from 'recharts';
 import { Document, Packer, Paragraph, Table, TableCell, TableRow, HeadingLevel } from 'docx';
 
 const ReportsPage = () => {
+    const [incomes, setIncomes] = useState<Income[]>([]);
+    const [expenses, setExpenses] = useState<Expense[]>([]);
+    const [budgets, setBudgets] = useState<Budget[]>([]);
+    const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    // Fetch all data from APIs
+    const fetchAllData = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                // No authentication token - show empty charts
+                setIncomes([]);
+                setExpenses([]);
+                setBudgets([]);
+                setSavingsGoals([]);
+                setLoading(false);
+                return;
+            }
+
+            const headers = {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            };
+
+            // Fetch all data in parallel
+            const [incomesRes, expensesRes, budgetsRes, savingsRes] = await Promise.all([
+                fetch('http://localhost:5000/api/income', { headers }),
+                fetch('http://localhost:5000/api/expense', { headers }),
+                fetch('http://localhost:5000/api/budgets', { headers }),
+                fetch('http://localhost:5000/api/savings-goals', { headers })
+            ]);
+
+            const [incomesData, expensesData, budgetsData, savingsData] = await Promise.all([
+                incomesRes.json(),
+                expensesRes.json(),
+                budgetsRes.json(),
+                savingsRes.json()
+            ]);
+
+            // Use real data if available, otherwise show empty
+            setIncomes(incomesRes.ok && incomesData.length > 0 ? incomesData : []);
+            setExpenses(expensesRes.ok && expensesData.length > 0 ? expensesData : []);
+            setBudgets(budgetsRes.ok && budgetsData.length > 0 ? budgetsData : []);
+            setSavingsGoals(savingsRes.ok && savingsData.length > 0 ? savingsData : []);
+            setError(null);
+        } catch (err) {
+            // On error, show empty charts instead of mock data
+            setIncomes([]);
+            setExpenses([]);
+            setBudgets([]);
+            setSavingsGoals([]);
+            setError(null);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchAllData();
+    }, []);
+
+    // Use the data from state (already includes fallback to mock data)
+    const incomeData = incomes;
+    const expenseData = expenses;
+    const budgetData = budgets;
+    const savingsGoalsData = savingsGoals;
 
     // Data for Category-wise Expense Distribution
-    const categoryData = mockExpenses.reduce((acc, expense) => {
+    const categoryData = expenseData.reduce((acc, expense) => {
         const existingCategory = acc.find(item => item.name === expense.category);
         if (existingCategory) {
             existingCategory.value += expense.amount;
@@ -17,14 +87,25 @@ const ReportsPage = () => {
         }
         return acc;
     }, [] as { name: string; value: number }[]);
+
     const COLORS = ['#38b2ac', '#4a5568', '#a0aec0', '#4299e1', '#9f7aea', '#ed8936'];
 
-    // Data for Budget Adherence
-    const budgetAdherenceData = mockBudgets.map(budget => ({
-        name: budget.category,
-        Budgeted: budget.amount,
-        Spent: budget.spent,
-    }));
+    // Data for Budget Adherence - Group by category
+    const budgetAdherenceData = Object.values(
+        budgetData.reduce((acc, budget) => {
+            const category = (budget as any).category || 'Other';
+            if (!acc[category]) {
+                acc[category] = {
+                    name: category,
+                    Budgeted: 0,
+                    Spent: 0
+                };
+            }
+            acc[category].Budgeted += budget.amount;
+            acc[category].Spent += budget.spent;
+            return acc;
+        }, {} as Record<string, { name: string; Budgeted: number; Spent: number }>)
+    );
 
     // Data for Forecasted Savings
     const forecastedSavingsData = [
@@ -35,13 +116,16 @@ const ReportsPage = () => {
     ];
 
     // Data for Savings Goals Progress
-    const savingsGoalsData = mockSavingsGoals.map(goal => ({
-        name: goal.name,
-        Current: goal.currentContribution,
-        Target: goal.targetAmount,
-        Remaining: goal.targetAmount - goal.currentContribution,
-        Progress: ((goal.currentContribution / goal.targetAmount) * 100).toFixed(1) + '%'
-    }));
+    const savingsGoalsProgressData = savingsGoalsData.map(goal => {
+        const progressPercent = (goal.currentContribution / goal.targetAmount) * 100;
+        return {
+            name: goal.name,
+            Progress: Math.round(progressPercent),
+            ProgressLabel: `${progressPercent.toFixed(1)}%`,
+            Current: goal.currentContribution,
+            Target: goal.targetAmount
+        };
+    });
 
     const CustomTooltip = ({ active, payload, label }: any) => {
         if (active && payload && payload.length) {
@@ -93,19 +177,19 @@ const ReportsPage = () => {
                                     new TableRow({
                                         children: [
                                             new TableCell({ children: [new Paragraph("Total Income")] }),
-                                            new TableCell({ children: [new Paragraph(`$${mockIncome.reduce((acc, income) => acc + income.amount, 0).toFixed(2)}`)] }),
+                                            new TableCell({ children: [new Paragraph(`$${incomeData.reduce((acc, income) => acc + income.amount, 0).toFixed(2)}`)] }),
                                         ],
                                     }),
                                     new TableRow({
                                         children: [
                                             new TableCell({ children: [new Paragraph("Total Expenses")] }),
-                                            new TableCell({ children: [new Paragraph(`$${mockExpenses.reduce((acc, expense) => acc + expense.amount, 0).toFixed(2)}`)] }),
+                                            new TableCell({ children: [new Paragraph(`$${expenseData.reduce((acc, expense) => acc + expense.amount, 0).toFixed(2)}`)] }),
                                         ],
                                     }),
                                     new TableRow({
                                         children: [
                                             new TableCell({ children: [new Paragraph("Net Savings")] }),
-                                            new TableCell({ children: [new Paragraph(`$${(mockIncome.reduce((acc, income) => acc + income.amount, 0) - mockExpenses.reduce((acc, expense) => acc + expense.amount, 0)).toFixed(2)}`)] }),
+                                            new TableCell({ children: [new Paragraph(`$${(incomeData.reduce((acc, income) => acc + income.amount, 0) - expenseData.reduce((acc, expense) => acc + expense.amount, 0)).toFixed(2)}`)] }),
                                         ],
                                     }),
                                 ],
@@ -130,9 +214,9 @@ const ReportsPage = () => {
                                             new TableCell({ children: [new Paragraph("Remaining")] }),
                                         ],
                                     }),
-                                    ...mockBudgets.map(budget => new TableRow({
+                                    ...budgetData.map(budget => new TableRow({
                                         children: [
-                                            new TableCell({ children: [new Paragraph(budget.category)] }),
+                                            new TableCell({ children: [new Paragraph((budget as any).name || 'Unnamed Budget')] }),
                                             new TableCell({ children: [new Paragraph(`$${budget.amount.toFixed(2)}`)] }),
                                             new TableCell({ children: [new Paragraph(`$${budget.spent.toFixed(2)}`)] }),
                                             new TableCell({ children: [new Paragraph(`$${(budget.amount - budget.spent).toFixed(2)}`)] }),
@@ -161,7 +245,7 @@ const ReportsPage = () => {
                                             new TableCell({ children: [new Paragraph("Progress")] }),
                                         ],
                                     }),
-                                    ...mockSavingsGoals.map(goal => new TableRow({
+                                    ...savingsGoalsData.map(goal => new TableRow({
                                         children: [
                                             new TableCell({ children: [new Paragraph(goal.name)] }),
                                             new TableCell({ children: [new Paragraph(`$${goal.targetAmount.toFixed(2)}`)] }),
@@ -218,7 +302,7 @@ const ReportsPage = () => {
                                             new TableCell({ children: [new Paragraph("Notes")] }),
                                         ],
                                     }),
-                                    ...mockExpenses.slice(0, 20).map(expense => new TableRow({
+                                    ...expenseData.slice(0, 20).map(expense => new TableRow({
                                         children: [
                                             new TableCell({ children: [new Paragraph(new Date(expense.date).toLocaleDateString())] }),
                                             new TableCell({ children: [new Paragraph(expense.category)] }),
@@ -247,6 +331,22 @@ const ReportsPage = () => {
             alert('Failed to generate report. Please try again.');
         }
     };
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center h-64">
+                <div className="text-xl text-text-primary">Loading financial reports...</div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex justify-center items-center h-64">
+                <div className="text-xl text-red-500">Error: {error}</div>
+            </div>
+        );
+    }
 
     return (
         <div>
@@ -331,14 +431,20 @@ const ReportsPage = () => {
                 <div className="bg-secondary p-6 rounded-lg shadow-lg">
                     <h2 className="text-xl font-bold text-text-primary mb-4">Savings Goals Progress</h2>
                     <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={savingsGoalsData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                        <BarChart data={savingsGoalsProgressData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#4a5568" />
                             <XAxis dataKey="name" stroke="#a0aec0" />
-                            <YAxis stroke="#a0aec0" />
-                            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(59, 130, 246, 0.2)' }} />
+                            <YAxis stroke="#a0aec0" domain={[0, 100]} />
+                            <Tooltip formatter={(value, name) => [`${value}%`, name]} />
                             <Legend />
-                            <Bar dataKey="Current" name="Current Savings" fill="#10b981" stackId="a" />
-                            <Bar dataKey="Remaining" name="Remaining" fill="#f59e0b" stackId="a" />
+                            <Bar dataKey="Progress" name="Progress (%)" fill="#10b981">
+                                {savingsGoalsProgressData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={
+                                        entry.Progress >= 80 ? '#10b981' :
+                                        entry.Progress >= 50 ? '#f59e0b' : '#ef4444'
+                                    } />
+                                ))}
+                            </Bar>
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
