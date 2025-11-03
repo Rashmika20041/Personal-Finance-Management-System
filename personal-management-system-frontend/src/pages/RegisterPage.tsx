@@ -241,32 +241,6 @@ const RegisterPage = () => {
               </div>
             </div>
 
-            {/* Terms and Conditions */}
-            <div className="flex items-start">
-              <div className="flex items-center h-5">
-                <input
-                  id="agreeToTerms"
-                  name="agreeToTerms"
-                  type="checkbox"
-                  checked={formData.agreeToTerms}
-                  onChange={handleInputChange}
-                  className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
-                />
-              </div>
-              <div className="ml-3 text-sm">
-                <label htmlFor="agreeToTerms" className="text-gray-700">
-                  I agree to the{' '}
-                  <a href="#" className="text-teal-600 hover:text-teal-500 font-medium">
-                    Terms and Conditions
-                  </a>{' '}
-                  and{' '}
-                  <a href="#" className="text-teal-600 hover:text-teal-500 font-medium">
-                    Privacy Policy
-                  </a>
-                </label>
-              </div>
-            </div>
-
             {/* Submit Button */}
             <button
               type="submit"

@@ -49,7 +49,7 @@ const SettingsPage = () => {
                     <h2 className="text-xl font-bold text-text-primary mb-4">Data Management</h2>
                     <div className="space-y-4">
                         <div>
-                            <h3 className="text-lg font-semibold text-text-primary">Local Backup (SQLite)</h3>
+                            <h3 className="text-lg font-semibold text-text-primary">Local Backup (Mongo DB)</h3>
                             <p className="text-sm text-text-secondary mb-3">Export your local data to a file or import a previous backup.</p>
                             <div className="flex space-x-4">
                                 <button onClick={handleExport} className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-500 transition-colors">

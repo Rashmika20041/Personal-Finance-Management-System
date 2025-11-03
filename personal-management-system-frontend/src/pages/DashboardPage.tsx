@@ -8,8 +8,10 @@ import {
   ChartBarIcon,
   SparklesIcon
 } from '@heroicons/react/24/outline';
+import { useAuth } from '../contexts/AuthContext';
 
 const DashboardPage = () => {
+  const { user } = useAuth();
   const totalExpenses = mockExpenses.reduce((acc, expense) => acc + expense.amount, 0);
   const totalIncome = mockIncome.reduce((acc, income) => acc + income.amount, 0);
   const totalBudget = mockBudgets.reduce((acc, budget) => acc + budget.amount, 0);
@@ -35,7 +37,7 @@ const DashboardPage = () => {
   const getFinancialHealth = () => {
     if (savingsRate >= 20 && expenseRatio <= 70 && netIncome > 0) return { status: 'Excellent', color: 'text-green-600', bg: 'bg-green-50' };
     if (savingsRate >= 15 && expenseRatio <= 80 && netIncome > 0) return { status: 'Good', color: 'text-blue-600', bg: 'bg-blue-50' };
-    if (savingsRate >= 10 && expenseRatio <= 90) return { status: 'Fair', color: 'text-yellow-600', bg: 'bg-yellow-50' };
+    if (savingsRate >= 10 && expenseRatio <= 90) return { status: 'Fair', color: 'text-red-600', bg: 'bg-red-50' };
     return { status: 'Needs Attention', color: 'text-red-600', bg: 'bg-red-50' };
   };
 
@@ -68,7 +70,7 @@ const DashboardPage = () => {
                 <h1 className="text-4xl font-bold mb-1 bg-gradient-to-r from-gray-800 via-blue-600 to-purple-600 bg-clip-text text-transparent">
                   Financial Dashboard
                 </h1>
-                <p className="text-gray-600 text-lg font-medium">Welcome back, Rashmika! 👋</p>
+                <p className="text-gray-600 text-lg font-medium">Welcome back, {user?.firstName || 'User'}! 👋</p>
               </div>
             </div>
 
