@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./database/db');
+const { connectOracle } = require('./database/oracle');
 const authRoutes = require('./routes/auth-routes');
 const incomeRoutes = require('./routes/income-routes');
 const expenseRoutes = require('./routes/expense-routes');
@@ -11,8 +12,19 @@ const syncRoutes = require('./routes/sync-routes');
 
 dotenv.config();
 
-// Connect to database
+// Connect to databases
 connectDB();
+
+// Test Oracle connection on startup
+const testOracleConnection = async () => {
+  try {
+    const connection = await connectOracle();
+    await connection.close();
+  } catch (error) {
+    console.log('⚠️  Oracle connection failed on startup, will connect when needed');
+  }
+};
+testOracleConnection();
 
 const app = express();
 const port = process.env.PORT || 5000;

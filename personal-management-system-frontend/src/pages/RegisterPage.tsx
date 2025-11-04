@@ -11,7 +11,6 @@ const RegisterPage = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    agreeToTerms: false,
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -59,11 +58,6 @@ const RegisterPage = () => {
 
     if (formData.password !== formData.confirmPassword) {
       alert('Passwords do not match');
-      return;
-    }
-
-    if (!formData.agreeToTerms) {
-      alert('Please agree to the terms and conditions');
       return;
     }
 
@@ -286,7 +280,7 @@ const RegisterPage = () => {
 
         {/* Footer */}
         <div className="text-center text-sm text-gray-500">
-          <p>By creating an account, you agree to our terms of service</p>
+          <p>Secure and private financial management</p>
         </div>
       </div>
     </div>

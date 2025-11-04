@@ -1,5 +1,4 @@
 import  { useState, useEffect } from 'react';
-import { savingsTrendData } from '../data/mockData';
 import type { Expense, Budget, SavingsGoal, Income } from '../data/mockData';
 import {
     BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer,
@@ -107,13 +106,73 @@ const ReportsPage = () => {
         }, {} as Record<string, { name: string; Budgeted: number; Spent: number }>)
     );
 
-    // Data for Forecasted Savings
-    const forecastedSavingsData = [
-        ...savingsTrendData,
-        { name: 'Oct', savings: 550, forecast: 550 },
-        { name: 'Nov', forecast: 600 },
-        { name: 'Dec', forecast: 650 },
-    ];
+    // Data for Forecasted Savings - Calculate from real data
+    const calculateSavingsTrends = () => {
+        // Group income and expenses by month
+        const monthlyData: { [key: string]: { income: number; expenses: number; savings: number } } = {};
+
+        // Process income data
+        incomeData.forEach(income => {
+            const date = new Date(income.date);
+            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            if (!monthlyData[monthKey]) {
+                monthlyData[monthKey] = { income: 0, expenses: 0, savings: 0 };
+            }
+            monthlyData[monthKey].income += income.amount;
+        });
+
+        // Process expense data
+        expenseData.forEach(expense => {
+            const date = new Date(expense.date);
+            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            if (!monthlyData[monthKey]) {
+                monthlyData[monthKey] = { income: 0, expenses: 0, savings: 0 };
+            }
+            monthlyData[monthKey].expenses += expense.amount;
+        });
+
+        // Calculate savings for each month
+        Object.keys(monthlyData).forEach(monthKey => {
+            monthlyData[monthKey].savings = monthlyData[monthKey].income - monthlyData[monthKey].expenses;
+        });
+
+        // Convert to chart data format and sort by date
+        const historicalData = Object.entries(monthlyData)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([monthKey, data]) => {
+                const [, month] = monthKey.split('-');
+                const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                return {
+                    name: monthNames[parseInt(month) - 1],
+                    savings: data.savings,
+                    monthKey
+                };
+            });
+
+        // Calculate average monthly savings trend for forecasting
+        const recentSavings = historicalData.slice(-3).map(d => d.savings);
+        const avgMonthlySavings = recentSavings.length > 0
+            ? recentSavings.reduce((sum, val) => sum + val, 0) / recentSavings.length
+            : 0;
+
+        // Generate forecast for next 3 months
+        const forecastData = [];
+        const lastMonthKey = historicalData.length > 0 ? historicalData[historicalData.length - 1].monthKey : `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+        const [lastYear, lastMonth] = lastMonthKey.split('-').map(Number);
+
+        for (let i = 1; i <= 3; i++) {
+            const forecastMonth = new Date(lastYear, lastMonth - 1 + i, 1);
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            forecastData.push({
+                name: monthNames[forecastMonth.getMonth()],
+                forecast: Math.max(0, avgMonthlySavings * (1 + (i * 0.1))) // Slight upward trend
+            });
+        }
+
+        return [...historicalData, ...forecastData];
+    };
+
+    const forecastedSavingsData = calculateSavingsTrends();
 
     // Data for Savings Goals Progress
     const savingsGoalsProgressData = savingsGoalsData.map(goal => {
