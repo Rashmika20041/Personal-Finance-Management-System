@@ -61,7 +61,8 @@ const savingsGoalController = {
           targetAmount,
           currentContribution: currentContribution || 0,
           deadline,
-          priority: priority || 'Medium'
+          priority: priority || 'Medium',
+          synced: false
         },
         { new: true }
       );

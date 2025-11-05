@@ -260,9 +260,9 @@ const syncService = {
             mongo_id: goal._id.toString(),
             user_id: userId,
             name: goal.name,
-            target_amount: Math.min(goal.targetAmount, 1000),
-            current_contribution: Math.min(goal.currentContribution, 500),
-            deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            target_amount: goal.targetAmount,
+            current_contribution: goal.currentContribution,
+            deadline: deadlineDate ? deadlineDate.toISOString().split('T')[0] : new Date('9999-12-31').toISOString().split('T')[0],
             priority: priorityStr
           })}`);
           // Handle upsert (insert or update) in Oracle DB
@@ -279,9 +279,9 @@ const syncService = {
               mongo_id: goal._id.toString(),
               user_id: userId,
               name: goal.name,
-              target_amount: Math.min(goal.targetAmount, 1000),
-              current_contribution: Math.min(goal.currentContribution, 500),
-              deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+              target_amount: goal.targetAmount,
+              current_contribution: goal.currentContribution,
+              deadline: deadlineDate ? deadlineDate.toISOString().split('T')[0] : new Date('9999-12-31').toISOString().split('T')[0],
               priority: priorityStr,
             },
             { autoCommit: true }

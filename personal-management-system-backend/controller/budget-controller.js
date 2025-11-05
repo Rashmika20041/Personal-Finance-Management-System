@@ -104,7 +104,8 @@ const budgetController = {
           amount,
           duration,
           threshold: threshold || 80,
-          spent
+          spent,
+          synced: false
         },
         { new: true }
       );

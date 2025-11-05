@@ -71,7 +71,8 @@ const expenseController = {
           category,
           date,
           paymentMethod: paymentMethod || 'Credit Card',
-          notes: notes || ''
+          notes: notes || '',
+          synced: false
         },
         { new: true }
       );
