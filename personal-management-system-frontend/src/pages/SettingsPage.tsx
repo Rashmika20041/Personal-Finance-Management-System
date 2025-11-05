@@ -3,35 +3,73 @@ import { ArrowDownTrayIcon, ArrowUpTrayIcon, InformationCircleIcon } from '@hero
 
 const SettingsPage = () => {
     
-    const handleExport = () => {
-        // In a real app, you would serialize your local DB data here
-        const dummyData = {
-            expenses: [
-                { id: 1, date: "2025-09-28", category: "Groceries", amount: 75.50 }
-            ],
-            budgets: [
-                { id: 1, name: "Monthly Groceries", amount: 400, spent: 120.70 }
-            ],
-            savingsGoals: [
-                 { id: 1, name: "New Laptop", targetAmount: 1500, currentContribution: 750 }
-            ]
-        };
-        const blob = new Blob([JSON.stringify(dummyData, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `finance_dashboard_backup_${new Date().toISOString().split('T')[0]}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-        alert("Backup exported successfully!");
+    const handleExport = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Authentication required');
+                return;
+            }
+
+            const response = await fetch('http://localhost:5000/api/settings/export', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const contentDisposition = response.headers.get('Content-Disposition');
+                const filename = contentDisposition ? contentDisposition.split('filename=')[1].replace(/"/g, '') : `finance_backup_${new Date().toISOString().split('T')[0]}.json`;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+                alert("Backup exported successfully!");
+            } else {
+                alert('Failed to export backup');
+            }
+        } catch (error) {
+            console.error('Export error:', error);
+            alert('Error exporting backup');
+        }
     };
 
-    const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        if (file) {
-            // In a real app, you'd parse this file and update your state/DB
-            console.log("Importing file:", file.name);
-            alert(`Successfully imported ${file.name}.`);
+        if (!file) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Authentication required');
+                return;
+            }
+
+            const text = await file.text();
+            const data = JSON.parse(text);
+
+            const response = await fetch('http://localhost:5000/api/settings/import', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                alert(result.message);
+                // Optionally refresh data or navigate
+            } else {
+                alert('Failed to import backup');
+            }
+        } catch (error) {
+            console.error('Import error:', error);
+            alert('Error importing backup');
         }
     };
 

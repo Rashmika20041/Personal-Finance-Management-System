@@ -9,6 +9,7 @@ const expenseRoutes = require('./routes/expense-routes');
 const savingsGoalsRoutes = require('./routes/savings-goals-routes');
 const budgetRoutes = require('./routes/budget-routes');
 const syncRoutes = require('./routes/sync-routes');
+const settingsRoutes = require('./routes/settings-routes');
 
 dotenv.config();
 
@@ -49,6 +50,7 @@ app.use('/api/expense', expenseRoutes);
 app.use('/api/savings-goals', savingsGoalsRoutes);
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/sync', syncRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Start server
 app.listen(port, () => {
