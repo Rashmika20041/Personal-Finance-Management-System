@@ -61,7 +61,7 @@ const incomeController = {
     }
   },
 
-  // Delete an income (hard delete)
+  // Delete an income (soft delete)
   deleteIncome: async (req, res) => {
     try {
       const { id } = req.params;
@@ -76,7 +76,7 @@ const incomeController = {
         return res.status(401).json({ message: 'Not authorized' });
       }
 
-      await Income.findByIdAndDelete(id);
+      await Income.findByIdAndUpdate(id, { isDeleted: true, synced: false });
       res.json({ message: 'Income removed' });
     } catch (err) {
       console.error('Delete income error:', err);

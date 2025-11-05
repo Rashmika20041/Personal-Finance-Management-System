@@ -120,13 +120,15 @@ const budgetController = {
     }
   },
 
-  // Delete budget (hard delete)
+  // Delete budget (soft delete)
   deleteBudget: async (req, res) => {
     try {
       const { id } = req.params;
 
-      const budget = await Budget.findOneAndDelete(
-        { _id: id, user: req.user.id, isDeleted: false }
+      const budget = await Budget.findOneAndUpdate(
+        { _id: id, user: req.user.id, isDeleted: false },
+        { isDeleted: true, synced: false },
+        { new: true }
       );
 
       if (!budget) {

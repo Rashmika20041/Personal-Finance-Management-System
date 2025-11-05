@@ -7,18 +7,23 @@ interface SyncStatusData {
     totalIncomes: number;
     syncedIncomes: number;
     unsyncedIncomes: number;
+    deletionPendingIncomes: number;
     totalExpenses: number;
     syncedExpenses: number;
     unsyncedExpenses: number;
+    deletionPendingExpenses: number;
     totalSavingsGoals: number;
     syncedSavingsGoals: number;
     unsyncedSavingsGoals: number;
+    deletionPendingSavingsGoals: number;
     totalBudgets: number;
     syncedBudgets: number;
     unsyncedBudgets: number;
+    deletionPendingBudgets: number;
     totalRecords: number;
     syncedRecords: number;
     syncPercentage: string;
+    totalDeletionPending: number;
 }
 
 const SynchronizationPage = () => {
@@ -154,6 +159,15 @@ const SynchronizationPage = () => {
                             {isOnline ? 'Online' : 'Offline'}
                         </span>
                     </div>
+                    {syncStatusData && syncStatusData.totalDeletionPending > 0 && (syncStatusData.unsyncedIncomes + syncStatusData.unsyncedExpenses + syncStatusData.unsyncedSavingsGoals + syncStatusData.unsyncedBudgets) === 0 && (
+                        <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg flex items-center">
+                            <ExclamationTriangleIcon className="h-6 w-6 mr-3 text-red-500" />
+                            <div>
+                                <p className="font-semibold">Pending Deletions</p>
+                                <p>You have {syncStatusData.totalDeletionPending} item(s) marked for deletion. Click "Sync Now" to remove them from the central database.</p>
+                            </div>
+                        </div>
+                    )}
                     <h2 className="text-xl font-bold text-text-primary mb-2">Sync Local & Central Databases</h2>
                     <p className="text-text-secondary mb-6">
                         Keep your data up-to-date across all your devices by syncing with the central server.

@@ -95,13 +95,15 @@ const expenseController = {
     }
   },
 
-  // Delete expense (hard delete)
+  // Delete expense (soft delete)
   deleteExpense: async (req, res) => {
     try {
       const { id } = req.params;
 
-      const expense = await Expense.findOneAndDelete(
-        { _id: id, user: req.user.id, isDeleted: false }
+      const expense = await Expense.findOneAndUpdate(
+        { _id: id, user: req.user.id, isDeleted: false },
+        { isDeleted: true, synced: false },
+        { new: true }
       );
 
       if (!expense) {

@@ -77,13 +77,15 @@ const savingsGoalController = {
     }
   },
 
-  // Delete savings goal (hard delete)
+  // Delete savings goal (soft delete)
   deleteSavingsGoal: async (req, res) => {
     try {
       const { id } = req.params;
 
-      const goal = await SavingsGoal.findOneAndDelete(
-        { _id: id, user: req.user.id, isDeleted: false }
+      const goal = await SavingsGoal.findOneAndUpdate(
+        { _id: id, user: req.user.id, isDeleted: false },
+        { isDeleted: true, synced: false },
+        { new: true }
       );
 
       if (!goal) {
