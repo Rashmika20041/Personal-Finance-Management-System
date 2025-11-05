@@ -314,6 +314,38 @@ const syncService = {
       }
     }
   },
+
+  syncAllUserData: async (userId) => {
+    try {
+      // Execute all sync operations
+      const [incomesResult, expensesResult, savingsGoalsResult, budgetsResult] = await Promise.all([
+        syncService.syncAllUserIncomes(userId),
+        syncService.syncAllUserExpenses(userId),
+        syncService.syncAllUserSavingsGoals(userId),
+        syncService.syncAllUserBudgets(userId)
+      ]);
+  
+      // Check if all operations were successful
+      const allSucceeded = incomesResult.success && expensesResult.success && savingsGoalsResult.success && budgetsResult.success;
+  
+      if (allSucceeded) {
+        return { success: true, message: 'All data synced successfully.' };
+      } else {
+        // Construct a detailed error message
+        let errorMessage = 'Synchronization failed for some items: ';
+        if (!incomesResult.success) errorMessage += `Incomes (${incomesResult.message}). `;
+        if (!expensesResult.success) errorMessage += `Expenses (${expensesResult.message}). `;
+        if (!savingsGoalsResult.success) errorMessage += `Savings Goals (${savingsGoalsResult.message}). `;
+        if (!budgetsResult.success) errorMessage += `Budgets (${budgetsResult.message}). `;
+        
+        console.error('Synchronization failed for some items:', errorMessage);
+        return { success: false, message: errorMessage };
+      }
+    } catch (error) {
+      console.error('A critical error occurred during the sync process:', error);
+      return { success: false, message: `A critical error occurred: ${error.message}` };
+    }
+  },
 };
 
 module.exports = syncService;

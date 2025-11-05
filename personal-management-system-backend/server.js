@@ -21,7 +21,7 @@ const testOracleConnection = async () => {
     const connection = await connectOracle();
     await connection.close();
   } catch (error) {
-    console.log('⚠️  Oracle connection failed on startup, will connect when needed');
+    console.log('Oracle connection failed on startup, will connect when needed');
   }
 };
 testOracleConnection();

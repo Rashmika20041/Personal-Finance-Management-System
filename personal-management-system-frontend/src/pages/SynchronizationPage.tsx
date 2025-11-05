@@ -1,71 +1,113 @@
 import { useState, useEffect } from 'react';
 import { ArrowPathIcon, CheckCircleIcon, ExclamationTriangleIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
-import { getSyncQueue, clearSyncQueue } from '../utils/offlineSync';
 
-type SyncStatus = 'idle' | 'syncing' | 'success' | 'conflict' | 'error';
+type SyncStatus = 'idle' | 'syncing' | 'success' | 'error';
+
+interface SyncStatusData {
+    totalIncomes: number;
+    syncedIncomes: number;
+    unsyncedIncomes: number;
+    totalExpenses: number;
+    syncedExpenses: number;
+    unsyncedExpenses: number;
+    totalSavingsGoals: number;
+    syncedSavingsGoals: number;
+    unsyncedSavingsGoals: number;
+    totalBudgets: number;
+    syncedBudgets: number;
+    unsyncedBudgets: number;
+    totalRecords: number;
+    syncedRecords: number;
+    syncPercentage: string;
+}
 
 const SynchronizationPage = () => {
-    const [lastSyncTime, setLastSyncTime] = useState<Date | null>(new Date('2025-10-05T09:55:18Z'));
+    const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
     const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
     const [isOnline, setIsOnline] = useState(navigator.onLine);
+    const [syncStatusData, setSyncStatusData] = useState<SyncStatusData | null>(null);
+    const [syncResult, setSyncResult] = useState<any>(null);
 
     useEffect(() => {
-        const handleOnline = () => {
-            setIsOnline(true);
-            if (syncStatus !== 'syncing') {
-                handleSync();
-            }
-        };
-
-        const handleOffline = () => {
-            setIsOnline(false);
-        };
+        const handleOnline = () => setIsOnline(true);
+        const handleOffline = () => setIsOnline(false);
 
         window.addEventListener('online', handleOnline);
         window.addEventListener('offline', handleOffline);
 
-        // Initial sync on component mount if online
-        if (navigator.onLine && syncStatus === 'idle') {
-            handleSync();
-        }
+        // Load initial sync status
+        loadSyncStatus();
 
         return () => {
             window.removeEventListener('online', handleOnline);
             window.removeEventListener('offline', handleOffline);
         };
-    }, [syncStatus]);
+    }, []);
 
-    const handleSync = () => {
-        setSyncStatus('syncing');
-        
-        // Simulate a network request
-        setTimeout(() => {
-            const syncQueue = getSyncQueue();
-            if (syncQueue.length > 0) {
-                console.log('Syncing queued data:', syncQueue);
-                // Here you would typically send the data to your central server
-                // For now, we'll just clear the queue
-                clearSyncQueue();
-            }
+    const loadSyncStatus = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) return;
 
-            // Randomly resolve to success or conflict for demonstration
-            if (Math.random() > 0.5) {
-                setSyncStatus('success');
-                setLastSyncTime(new Date());
-            } else {
-                setSyncStatus('conflict');
+            const response = await fetch('http://localhost:5000/api/sync/status', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setSyncStatusData(data);
             }
-        }, 2000);
+        } catch (error) {
+            console.error('Error loading sync status:', error);
+        }
     };
 
-    const handleConflictResolution = (choice: 'local' | 'central') => {
-        console.log(`User chose to keep ${choice} data.`);
+    const handleSync = async () => {
+        if (!isOnline) {
+            setSyncStatus('error');
+            setSyncResult({ message: 'No internet connection available' });
+            return;
+        }
+
         setSyncStatus('syncing');
-        // Simulate resolving the conflict
-        setTimeout(() => {
-            setSyncStatus('success');
-            setLastSyncTime(new Date());
-        }, 1500);
+        setSyncResult(null);
+
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                setSyncStatus('error');
+                setSyncResult({ message: 'Authentication required' });
+                return;
+            }
+
+            const response = await fetch('http://localhost:5000/api/sync/all', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                setSyncStatus('success');
+                setSyncResult(result);
+                setLastSyncTime(new Date());
+                // Reload sync status after successful sync
+                await loadSyncStatus();
+            } else {
+                setSyncStatus('error');
+                setSyncResult(result);
+            }
+        } catch (error) {
+            console.error('Sync error:', error);
+            setSyncStatus('error');
+            setSyncResult({ message: 'Network error occurred during sync' });
+        }
     };
 
     const renderStatus = () => {
@@ -81,21 +123,14 @@ const SynchronizationPage = () => {
                 return (
                     <div className="flex items-center text-green-400">
                         <CheckCircleIcon className="h-5 w-5 mr-2" />
-                        <span>Synchronization successful!</span>
-                    </div>
-                );
-            case 'conflict':
-                return (
-                    <div className="flex items-center text-red-500">
-                        <ExclamationTriangleIcon className="h-5 w-5 mr-2" />
-                        <span>Conflict detected! Please resolve.</span>
+                        <span>{syncResult?.message || 'Synchronization successful!'}</span>
                     </div>
                 );
             case 'error':
                  return (
                     <div className="flex items-center text-red-500">
                         <ExclamationTriangleIcon className="h-5 w-5 mr-2" />
-                        <span>An error occurred during sync.</span>
+                        <span>{syncResult?.message || 'An error occurred during sync.'}</span>
                     </div>
                 );
             default:
@@ -138,19 +173,39 @@ const SynchronizationPage = () => {
                     </div>
                 </div>
 
-                {syncStatus === 'conflict' && (
+                {syncStatusData && (
                     <div className="mt-8 border-t border-accent pt-6">
-                        <h3 className="text-lg font-semibold text-center text-red-400 mb-4">Conflict Resolution</h3>
-                        <p className="text-center text-text-secondary mb-6">
-                            The data on your local device is different from the data on the server. Choose which version to keep.
-                        </p>
-                        <div className="flex justify-center space-x-4">
-                            <button onClick={() => handleConflictResolution('local')} className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-500 transition-colors">
-                                Keep Local Data
-                            </button>
-                            <button onClick={() => handleConflictResolution('central')} className="bg-gray-600 text-white px-6 py-2 rounded-md hover:bg-gray-500 transition-colors">
-                                Keep Central Data
-                            </button>
+                        <h3 className="text-lg font-semibold text-center text-text-primary mb-4">Sync Status</h3>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div className="text-center">
+                                <p className="text-text-secondary">Incomes</p>
+                                <p className="font-semibold text-text-primary">
+                                    {syncStatusData.syncedIncomes}/{syncStatusData.totalIncomes} synced
+                                </p>
+                            </div>
+                            <div className="text-center">
+                                <p className="text-text-secondary">Expenses</p>
+                                <p className="font-semibold text-text-primary">
+                                    {syncStatusData.syncedExpenses}/{syncStatusData.totalExpenses} synced
+                                </p>
+                            </div>
+                            <div className="text-center">
+                                <p className="text-text-secondary">Savings Goals</p>
+                                <p className="font-semibold text-text-primary">
+                                    {syncStatusData.syncedSavingsGoals}/{syncStatusData.totalSavingsGoals} synced
+                                </p>
+                            </div>
+                            <div className="text-center">
+                                <p className="text-text-secondary">Budgets</p>
+                                <p className="font-semibold text-text-primary">
+                                    {syncStatusData.syncedBudgets}/{syncStatusData.totalBudgets} synced
+                                </p>
+                            </div>
+                        </div>
+                        <div className="mt-4 text-center">
+                            <p className="text-lg font-semibold text-text-primary">
+                                Overall Progress: {syncStatusData.syncPercentage}%
+                            </p>
                         </div>
                     </div>
                 )}
