@@ -7,23 +7,32 @@ import {
 import { Document, Packer, Paragraph, Table, TableCell, TableRow, HeadingLevel } from 'docx';
 
 const ReportsPage = () => {
-    const [incomes, setIncomes] = useState<Income[]>([]);
-    const [expenses, setExpenses] = useState<Expense[]>([]);
-    const [budgets, setBudgets] = useState<Budget[]>([]);
-    const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>([]);
+    const [incomes] = useState<Income[]>([]);
+    const [expenses] = useState<Expense[]>([]);
+    const [budgets] = useState<Budget[]>([]);
+    const [savingsGoals] = useState<SavingsGoal[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Fetch all data from APIs
+    // Chart data state
+    const [categoryData, setCategoryData] = useState<any[]>([]);
+    const [budgetAdherenceData, setBudgetAdherenceData] = useState<any[]>([]);
+    const [forecastedSavingsData, setForecastedSavingsData] = useState<any[]>([]);
+    const [savingsGoalsProgressData, setSavingsGoalsProgressData] = useState<any[]>([]);
+
+    // Data source tracking
+    const [dataSource, setDataSource] = useState<'oracle' | 'local' | 'none'>('none');
+
+    // Fetch all data from Oracle central database APIs
     const fetchAllData = async () => {
         try {
             const token = localStorage.getItem('token');
             if (!token) {
                 // No authentication token - show empty charts
-                setIncomes([]);
-                setExpenses([]);
-                setBudgets([]);
-                setSavingsGoals([]);
+                setCategoryData([]);
+                setBudgetAdherenceData([]);
+                setForecastedSavingsData([]);
+                setSavingsGoalsProgressData([]);
                 setLoading(false);
                 return;
             }
@@ -33,7 +42,87 @@ const ReportsPage = () => {
                 'Content-Type': 'application/json'
             };
 
-            // Fetch all data in parallel
+            // Fetch all report data from Oracle central database in parallel
+            const [categoryRes, budgetRes, savingsRes, goalsRes] = await Promise.all([
+                fetch('http://localhost:5000/api/reports/expenses-by-category', { headers }),
+                fetch('http://localhost:5000/api/reports/budget-adherence', { headers }),
+                fetch('http://localhost:5000/api/reports/savings-trends', { headers }),
+                fetch('http://localhost:5000/api/reports/savings-goals-progress', { headers })
+            ]);
+
+            console.log('Oracle API responses:', {
+                category: categoryRes.status,
+                budget: budgetRes.status,
+                savings: savingsRes.status,
+                goals: goalsRes.status
+            });
+
+            const [categoryData, budgetData, savingsData, goalsData] = await Promise.all([
+                categoryRes.json(),
+                budgetRes.json(),
+                savingsRes.json(),
+                goalsRes.json()
+            ]);
+
+            console.log('Oracle data received:', {
+                category: categoryData,
+                budget: budgetData,
+                savings: savingsData,
+                goals: goalsData
+            });
+
+            // Validate and filter Oracle data
+            const validCategoryData = categoryData.filter((item: any) => item.name && item.value > 0);
+            const validBudgetData = budgetData.filter((item: any) => item.name && (item.Budgeted > 0 || item.Spent > 0));
+            const validSavingsData = savingsData.filter((item: any) => item.name && typeof item.savings === 'number');
+            const validGoalsData = goalsData.filter((item: any) => item.name && item.Target > 0);
+
+            // Check if Oracle has valid data
+            const hasOracleData = validCategoryData.length > 0 || validBudgetData.length > 0 ||
+                                  validSavingsData.length > 0 || validGoalsData.length > 0;
+
+            if (hasOracleData) {
+                // Use Oracle data
+                setCategoryData(validCategoryData);
+                setBudgetAdherenceData(validBudgetData);
+                setForecastedSavingsData(validSavingsData);
+                setSavingsGoalsProgressData(validGoalsData);
+                setDataSource('oracle');
+                console.log('Using Oracle central database data for charts');
+            } else {
+                // Oracle data is empty, fall back to local MongoDB data
+                console.log('Oracle data empty, falling back to local data');
+                await fetchLocalData();
+            }
+
+            setError(null);
+        } catch (err) {
+            console.error('Error fetching Oracle report data:', err);
+            setError('Failed to load report data from central database');
+            // On error, try local data as fallback
+            try {
+                await fetchLocalData();
+            } catch (localErr) {
+                console.error('Local data fallback also failed:', localErr);
+                setDataSource('none');
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Fallback to local MongoDB data if Oracle is empty
+    const fetchLocalData = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            const headers = {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            };
+
+            // Fetch local data
             const [incomesRes, expensesRes, budgetsRes, savingsRes] = await Promise.all([
                 fetch('http://localhost:5000/api/income', { headers }),
                 fetch('http://localhost:5000/api/expense', { headers }),
@@ -48,21 +137,76 @@ const ReportsPage = () => {
                 savingsRes.json()
             ]);
 
-            // Use real data if available, otherwise show empty
-            setIncomes(incomesRes.ok && incomesData.length > 0 ? incomesData : []);
-            setExpenses(expensesRes.ok && expensesData.length > 0 ? expensesData : []);
-            setBudgets(budgetsRes.ok && budgetsData.length > 0 ? budgetsData : []);
-            setSavingsGoals(savingsRes.ok && savingsData.length > 0 ? savingsData : []);
-            setError(null);
+            // Compute category data from expenses
+            const computedCategoryData = expensesData.reduce((acc: any[], expense: any) => {
+                const existing = acc.find(item => item.name === expense.category);
+                if (existing) {
+                    existing.value += expense.amount;
+                } else {
+                    acc.push({ name: expense.category, value: expense.amount });
+                }
+                return acc;
+            }, []);
+
+            // Compute budget adherence
+            const computedBudgetData = Object.values(
+                budgetsData.reduce((acc: any, budget: any) => {
+                    const category = budget.category || 'Other';
+                    if (!acc[category]) {
+                        acc[category] = { name: category, Budgeted: 0, Spent: 0 };
+                    }
+                    acc[category].Budgeted += budget.amount;
+                    acc[category].Spent += budget.spent || 0;
+                    return acc;
+                }, {})
+            );
+
+            // Compute savings trends
+            const monthlyData: { [key: string]: { income: number; expenses: number; savings: number } } = {};
+            incomesData.forEach((income: any) => {
+                const date = new Date(income.date);
+                const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                if (!monthlyData[monthKey]) monthlyData[monthKey] = { income: 0, expenses: 0, savings: 0 };
+                monthlyData[monthKey].income += income.amount;
+            });
+            expensesData.forEach((expense: any) => {
+                const date = new Date(expense.date);
+                const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                if (!monthlyData[monthKey]) monthlyData[monthKey] = { income: 0, expenses: 0, savings: 0 };
+                monthlyData[monthKey].expenses += expense.amount;
+            });
+            Object.keys(monthlyData).forEach(monthKey => {
+                monthlyData[monthKey].savings = monthlyData[monthKey].income - monthlyData[monthKey].expenses;
+            });
+            const computedSavingsData = Object.entries(monthlyData)
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([monthKey, data]) => {
+                    const [, month] = monthKey.split('-');
+                    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    return { name: monthNames[parseInt(month) - 1], savings: data.savings };
+                });
+
+            // Compute savings goals progress
+            const computedGoalsData = savingsData.map((goal: any) => {
+                const progress = (goal.currentContribution / goal.targetAmount) * 100;
+                return {
+                    name: goal.name,
+                    Progress: Math.round(progress),
+                    ProgressLabel: `${progress.toFixed(1)}%`,
+                    Current: goal.currentContribution,
+                    Target: goal.targetAmount
+                };
+            });
+
+            // Set computed data
+            setCategoryData(computedCategoryData);
+            setBudgetAdherenceData(computedBudgetData as any[]);
+            setForecastedSavingsData(computedSavingsData);
+            setSavingsGoalsProgressData(computedGoalsData);
+            setDataSource('local');
+
         } catch (err) {
-            // On error, show empty charts instead of mock data
-            setIncomes([]);
-            setExpenses([]);
-            setBudgets([]);
-            setSavingsGoals([]);
-            setError(null);
-        } finally {
-            setLoading(false);
+            console.error('Error fetching local data:', err);
         }
     };
 
@@ -70,121 +214,13 @@ const ReportsPage = () => {
         fetchAllData();
     }, []);
 
-    // Use the data from state (already includes fallback to mock data)
+    const COLORS = ['#38b2ac', '#4a5568', '#a0aec0', '#4299e1', '#9f7aea', '#ed8936'];
+
+    // Use the data from state (already includes fallback to local data)
     const incomeData = incomes;
     const expenseData = expenses;
     const budgetData = budgets;
     const savingsGoalsData = savingsGoals;
-
-    // Data for Category-wise Expense Distribution
-    const categoryData = expenseData.reduce((acc, expense) => {
-        const existingCategory = acc.find(item => item.name === expense.category);
-        if (existingCategory) {
-            existingCategory.value += expense.amount;
-        } else {
-            acc.push({ name: expense.category, value: expense.amount });
-        }
-        return acc;
-    }, [] as { name: string; value: number }[]);
-
-    const COLORS = ['#38b2ac', '#4a5568', '#a0aec0', '#4299e1', '#9f7aea', '#ed8936'];
-
-    // Data for Budget Adherence - Group by category
-    const budgetAdherenceData = Object.values(
-        budgetData.reduce((acc, budget) => {
-            const category = (budget as any).category || 'Other';
-            if (!acc[category]) {
-                acc[category] = {
-                    name: category,
-                    Budgeted: 0,
-                    Spent: 0
-                };
-            }
-            acc[category].Budgeted += budget.amount;
-            acc[category].Spent += budget.spent;
-            return acc;
-        }, {} as Record<string, { name: string; Budgeted: number; Spent: number }>)
-    );
-
-    // Data for Forecasted Savings - Calculate from real data
-    const calculateSavingsTrends = () => {
-        // Group income and expenses by month
-        const monthlyData: { [key: string]: { income: number; expenses: number; savings: number } } = {};
-
-        // Process income data
-        incomeData.forEach(income => {
-            const date = new Date(income.date);
-            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-            if (!monthlyData[monthKey]) {
-                monthlyData[monthKey] = { income: 0, expenses: 0, savings: 0 };
-            }
-            monthlyData[monthKey].income += income.amount;
-        });
-
-        // Process expense data
-        expenseData.forEach(expense => {
-            const date = new Date(expense.date);
-            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-            if (!monthlyData[monthKey]) {
-                monthlyData[monthKey] = { income: 0, expenses: 0, savings: 0 };
-            }
-            monthlyData[monthKey].expenses += expense.amount;
-        });
-
-        // Calculate savings for each month
-        Object.keys(monthlyData).forEach(monthKey => {
-            monthlyData[monthKey].savings = monthlyData[monthKey].income - monthlyData[monthKey].expenses;
-        });
-
-        // Convert to chart data format and sort by date
-        const historicalData = Object.entries(monthlyData)
-            .sort(([a], [b]) => a.localeCompare(b))
-            .map(([monthKey, data]) => {
-                const [, month] = monthKey.split('-');
-                const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                return {
-                    name: monthNames[parseInt(month) - 1],
-                    savings: data.savings,
-                    monthKey
-                };
-            });
-
-        // Calculate average monthly savings trend for forecasting
-        const recentSavings = historicalData.slice(-3).map(d => d.savings);
-        const avgMonthlySavings = recentSavings.length > 0
-            ? recentSavings.reduce((sum, val) => sum + val, 0) / recentSavings.length
-            : 0;
-
-        // Generate forecast for next 3 months
-        const forecastData = [];
-        const lastMonthKey = historicalData.length > 0 ? historicalData[historicalData.length - 1].monthKey : `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
-        const [lastYear, lastMonth] = lastMonthKey.split('-').map(Number);
-
-        for (let i = 1; i <= 3; i++) {
-            const forecastMonth = new Date(lastYear, lastMonth - 1 + i, 1);
-            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            forecastData.push({
-                name: monthNames[forecastMonth.getMonth()],
-                forecast: Math.max(0, avgMonthlySavings * (1 + (i * 0.1))) // Slight upward trend
-            });
-        }
-
-        return [...historicalData, ...forecastData];
-    };
-
-    const forecastedSavingsData = calculateSavingsTrends();
-
-    // Data for Savings Goals Progress
-    const savingsGoalsProgressData = savingsGoalsData.map(goal => {
-        const progressPercent = (goal.currentContribution / goal.targetAmount) * 100;
-        return {
-            name: goal.name,
-            Progress: Math.round(progressPercent),
-            ProgressLabel: `${progressPercent.toFixed(1)}%`,
-            Current: goal.currentContribution,
-            Target: goal.targetAmount
-        };
-    });
 
     const CustomTooltip = ({ active, payload, label }: any) => {
         if (active && payload && payload.length) {
@@ -410,7 +446,27 @@ const ReportsPage = () => {
     return (
         <div>
             <div className="flex justify-between items-center mb-8">
-                <h1 className="text-3xl font-bold text-text-primary">Financial Reports</h1>
+                <div>
+                    <h1 className="text-3xl font-bold text-text-primary">Financial Reports</h1>
+                    <div className="mt-2">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                            dataSource === 'oracle' ? 'bg-green-100 text-green-800' :
+                            dataSource === 'local' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                        }`}>
+                            <span className={`w-2 h-2 rounded-full mr-2 ${
+                                dataSource === 'oracle' ? 'bg-green-500' :
+                                dataSource === 'local' ? 'bg-yellow-500' :
+                                'bg-red-500'
+                            }`}></span>
+                            Data Source: {
+                                dataSource === 'oracle' ? 'Central Oracle Database' :
+                                dataSource === 'local' ? 'Local MongoDB Database' :
+                                'No Data Available'
+                            }
+                        </span>
+                    </div>
+                </div>
                 <button
                     onClick={generateAndDownloadReport}
                     className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105 flex items-center space-x-2"
